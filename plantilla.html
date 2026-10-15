@@ -1,0 +1,184 @@
+<title>Articulario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: instrumento de laboratorio — visor 3D grande a la izquierda, panel de control y lecturas (EPG, glotis) a la derecha; en móvil, apilado. */
+:root {
+  --bg: #eef1f3;
+  --surface: #ffffff;
+  --sunk: #e3e8ec;
+  --ink: #16202a;
+  --muted: #5a6672;
+  --line: #d3dae0;
+  --air: #1d6fa5;
+  --air-ink: #ffffff;
+  --contact: #d97a1e;
+  --viewer: #e6ebef;
+  --f-ipa: "Gentium Book Plus", "Gentium Plus", "Charis SIL", "Doulos SIL", "Noto Serif", Georgia, serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1318; --surface: #171d24; --sunk: #11161c; --ink: #e6ebf0; --muted: #98a4b0; --line: #29323c;
+    --air: #5eb2e8; --air-ink: #07121b; --contact: #f0a04b; --viewer: #131920; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1318; --surface: #171d24; --sunk: #11161c; --ink: #e6ebf0; --muted: #98a4b0; --line: #29323c;
+  --air: #5eb2e8; --air-ink: #07121b; --contact: #f0a04b; --viewer: #131920; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--f-body); }
+.app { max-width: 1320px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 28px; display: grid; gap: 16px; }
+.ipa { font-family: var(--f-ipa); font-feature-settings: "liga" 0; }
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
+header.top h1 { margin: 0; font: 700 30px/1.1 var(--f-ipa); letter-spacing: 0.01em; }
+header.top p { margin: 0; font: italic 400 19px/1.2 var(--f-ipa); color: var(--muted); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* Visor */
+/* El contenedor del canvas WebGL evita overflow:hidden y position:sticky, que en Safari (macOS) pueden impedir que se pinte. El canvas va separado 4 px del borde para no tapar las esquinas redondeadas. */
+.viewer { position: relative; background: var(--viewer); border: 1px solid var(--line); border-radius: var(--r); }
+.stage { position: relative; height: clamp(420px, 74vh, 760px); touch-action: none; }
+.stage canvas { position: absolute; left: 4px; top: 4px; display: block; width: calc(100% - 8px); height: calc(100% - 8px); }
+@media (max-width: 900px) { .stage { height: min(100vw, 520px); } }
+.view-tabs { position: absolute; top: 12px; left: 12px; z-index: 3; display: flex; gap: 2px; padding: 3px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
+.view-tabs button { font: 500 13px/1 var(--f-body); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 7px 12px; cursor: pointer; }
+.view-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.view-tabs button:focus-visible, .chip:focus-visible, .btn:focus-visible, .toggles label:focus-within { outline: 2px solid var(--air); outline-offset: 2px; }
+.viewer-foot { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; justify-content: space-between; pointer-events: none; }
+.viewer-foot > * { pointer-events: auto; }
+@media (max-width: 900px) { .viewer-foot { position: static; padding: 10px; border-top: 1px solid var(--line); background: var(--surface); border-radius: 0 0 var(--r) var(--r); } .viewer-foot .cor, .viewer-foot .toggles { border: 0; padding: 0; max-width: none; } }
+.toggles { display: flex; flex-wrap: wrap; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; }
+.toggles label { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--f-body); color: var(--ink); padding: 5px 6px; border-radius: 6px; cursor: pointer; user-select: none; }
+.toggles input { accent-color: var(--air); margin: 0; }
+.cor { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; max-width: 380px; flex: 1 1 260px; }
+.cor .row { display: flex; align-items: center; gap: 10px; font: 500 12px/1.2 var(--f-body); }
+.cor input { flex: 1; min-width: 0; accent-color: var(--air); }
+.cor output { font: 500 12px/1 var(--f-mono); font-variant-numeric: tabular-nums; min-width: 6ch; text-align: right; }
+.cor p { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+
+/* Etiquetas 3D */
+.lbl { position: absolute; width: 0; height: 0; pointer-events: none; }
+.lbl i { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 1.5px var(--surface); }
+.lbl span { position: absolute; top: -9px; white-space: nowrap; font: 500 11.5px/1 var(--f-body); color: var(--ink); background: color-mix(in srgb, var(--surface) 86%, transparent); border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; }
+.lbl.r span { left: 10px; }
+.lbl.l span { right: 10px; }
+.lbl.t span { top: -30px; left: 0; transform: translateX(-50%); }
+.lbl.b span { top: 10px; left: 0; transform: translateX(-50%); }
+
+/* Panel */
+.panel { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.eyebrow { margin: 0; font: 500 11px/1 var(--f-mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.sounds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chip { display: grid; place-items: center; background: var(--sunk); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 4px 0 8px; cursor: pointer; font: 400 46px/1.1 var(--f-ipa); }
+.chip:hover { border-color: var(--air); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.scrub { display: grid; gap: 6px; }
+.scrub .ends { display: flex; justify-content: space-between; font: 500 12px/1 var(--f-body); color: var(--muted); }
+.scrub input { width: 100%; accent-color: var(--air); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px/1 var(--f-body); color: var(--air-ink); background: var(--air); border: 0; border-radius: 8px; padding: 11px 14px; cursor: pointer; }
+.btn svg { width: 14px; height: 14px; }
+.desc h2 { margin: 0; font: 400 22px/1.2 var(--f-ipa); text-wrap: balance; }
+.desc h2 .ipa { font-size: 26px; margin-right: 6px; }
+dl.feat { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+dl.feat div { background: var(--sunk); border-radius: 6px; padding: 7px 10px 8px; display: grid; gap: 3px; }
+dl.feat dt { font: 500 10.5px/1.2 var(--f-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+dl.feat dd { margin: 0; font-size: 14px; }
+.instr { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 12px; align-items: start; }
+.instr figure { margin: 0; display: grid; gap: 6px; min-width: 0; }
+.instr figcaption { font: 500 11px/1.3 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.instr canvas { width: 100%; height: auto; display: block; background: var(--sunk); border-radius: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.legend .on::before { background: var(--contact); }
+.legend .off::before { border: 1.5px solid var(--muted); width: 6px; height: 6px; }
+.glerr { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; margin: 0; padding: 24px; text-align: center; color: var(--muted); font-size: 14px; }
+.desc p { margin: 0; font-size: 14.5px; line-height: 1.55; max-width: 62ch; }
+footer { color: var(--muted); font-size: 12.5px; max-width: 95ch; }
+footer p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <h1>Articulario</h1>
+    <p>la lengua por dentro</p>
+  </header>
+
+  <main class="layout">
+    <section class="viewer" aria-label="Modelo 3D del tracto vocal">
+      <div class="stage" id="viewer">
+        <div class="view-tabs" role="group" aria-label="Vista">
+          <button type="button" id="v3d" data-view="3d" aria-pressed="true">3D</button>
+          <button type="button" id="vsag" data-view="sag" aria-pressed="false">Sagital</button>
+          <button type="button" id="vcor" data-view="cor" aria-pressed="false">Coronal</button>
+          <button type="button" id="vpal" data-view="pal" aria-pressed="false">Paladar</button>
+        </div>
+      </div>
+      <div class="viewer-foot">
+        <div class="cor" id="corBox" hidden>
+          <div class="row"><label for="corX">Posición del corte</label><input type="range" id="corX" min="0.8" max="5" step="0.05" value="1.65"><output id="corXv" for="corX">1,6 cm</output></div>
+          <p id="corText">—</p>
+        </div>
+        <div class="toggles" role="group" aria-label="Capas">
+          <label><input type="checkbox" id="tFlow" checked> Aire</label>
+          <label><input type="checkbox" id="tContact" checked> Contacto</label>
+          <label><input type="checkbox" id="tLabels" checked> Etiquetas</label>
+          <label id="tCutWrap"><input type="checkbox" id="tCut" checked> Corte medio</label>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="card">
+        <p class="eyebrow">Sonido</p>
+        <div class="sounds" role="group" aria-label="Sonido">
+          <button type="button" class="chip" id="btnS" data-sound="s" aria-pressed="true" aria-label="[s] fricativa alveolar sorda">s</button>
+          <button type="button" class="chip" id="btnL" data-sound="l" aria-pressed="false" aria-label="[l] lateral alveolar sonora">l</button>
+        </div>
+        <div class="scrub">
+          <div class="ends"><span>Reposo</span><span id="kR" class="ipa">[s]</span></div>
+          <input type="range" id="k" min="0" max="1" step="0.01" value="1" aria-label="Transición desde la posición de reposo">
+        </div>
+        <button type="button" class="btn" id="play"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg>Articular y escuchar</button>
+      </div>
+
+      <div class="card desc">
+        <h2 id="descTitle"><span class="ipa">[s]</span> fricativa alveolar sorda</h2>
+        <dl class="feat" id="descList"></dl>
+        <p id="descText"></p>
+      </div>
+
+      <div class="card">
+        <div class="instr">
+          <figure>
+            <figcaption>Palatograma (EPG)</figcaption>
+            <canvas id="epg" width="440" height="480" aria-label="Contactos de la lengua con el paladar"></canvas>
+            <div class="legend"><span class="on">contacto</span><span class="off">sin contacto</span></div>
+          </figure>
+          <figure>
+            <figcaption>Glotis</figcaption>
+            <canvas id="glot" width="236" height="300" aria-label="Glotis vista desde arriba"></canvas>
+          </figure>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <footer>
+    <p>Prototipo. Modelo esquemático: las posturas están definidas a mano a partir de descripciones articulatorias habituales del español, no de datos de un hablante concreto. Medidas aproximadas en centímetros. El audio es sintético y solo orientativo.</p>
+  </footer>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+/*__APP__*/
+</script>
