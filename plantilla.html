@@ -49,7 +49,7 @@ header.top h1 { margin: 0; font: 700 30px/1.1 var(--f-ipa); letter-spacing: 0.01
 .view-tabs { position: absolute; top: 12px; left: 12px; z-index: 3; display: flex; gap: 2px; padding: 3px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
 .view-tabs button { font: 500 13px/1 var(--f-body); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 7px 12px; cursor: pointer; }
 .view-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
-.view-tabs button:focus-visible, .snd:focus-visible, .tabs2 button:focus-visible, .btn:focus-visible, .toggles label:focus-within { outline: 2px solid var(--air); outline-offset: 2px; }
+.view-tabs button:focus-visible, .snd:focus-visible, .tabs2 button:focus-visible, .step:focus-visible, .btn:focus-visible, .toggles label:focus-within { outline: 2px solid var(--air); outline-offset: 2px; }
 .viewer-foot { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; justify-content: space-between; pointer-events: none; }
 .viewer-foot > * { pointer-events: auto; }
 @media (max-width: 900px) { .viewer-foot { position: static; padding: 10px; border-top: 1px solid var(--line); background: var(--surface); border-radius: 0 0 var(--r) var(--r); } .viewer-foot .cor, .viewer-foot .toggles { border: 0; padding: 0; max-width: none; } }
@@ -101,15 +101,22 @@ table.ipa-tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .ipa-vow .snd.on { background: var(--sunk); }
 .ipa-vow .snd[aria-pressed="true"] { background: var(--ink); }
 .ipa-vow .lab { position: absolute; font: 500 10px/1 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); transform: translate(-50%, -50%); white-space: nowrap; }
-.legend2 { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
-.legend2 span { display: inline-flex; align-items: center; gap: 5px; }
-.legend2 .snd { width: 22px; height: 20px; font-size: 14px; display: inline-grid; place-items: center; pointer-events: none; }
+.phases { display: grid; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
+.phases .eyebrow { padding-top: 10px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.step { width: 100%; display: grid; justify-items: center; gap: 3px; padding: 7px 2px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: 500 12px/1.1 var(--f-body); cursor: pointer; }
+.step b { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--sunk); font: 600 11px/1 var(--f-mono); color: var(--muted); }
+.step:hover { border-color: var(--air); }
+.step[aria-current="step"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.step[aria-current="step"] b { background: var(--air); color: var(--air-ink); }
+.phase-txt { margin: 0; font-size: 13.5px; line-height: 1.5; min-height: 4.5em; }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .scrub { display: grid; gap: 6px; }
 .scrub .ends { display: flex; justify-content: space-between; font: 500 12px/1 var(--f-body); color: var(--muted); }
 .scrub input { width: 100%; accent-color: var(--air); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px/1 var(--f-body); color: var(--air-ink); background: var(--air); border: 0; border-radius: 8px; padding: 11px 14px; cursor: pointer; }
 .btn svg { width: 14px; height: 14px; }
+.btn:disabled, .scrub input:disabled { opacity: 0.45; cursor: default; }
 .desc h2 { margin: 0; font: 400 22px/1.2 var(--f-ipa); text-wrap: balance; }
 .desc h2 .ipa { font-size: 26px; margin-right: 6px; }
 dl.feat { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -171,16 +178,20 @@ footer p { margin: 0; }
         </div>
         <table class="ipa-tbl" id="tblC" aria-label="Consonantes del español por punto y modo de articulación"></table>
         <div class="ipa-vow" id="tblV" role="group" aria-label="Vocales del español" hidden></div>
-        <div class="legend2" aria-hidden="true"><span><i class="snd on">s</i>disponible</span><span><i class="snd al">ŋ</i>alófono</span><span><i class="snd">p</i>próximamente</span></div>
         <div class="scrub">
-          <div class="ends"><span>Reposo</span><span id="kR" class="ipa">[s]</span></div>
+          <div class="ends"><span>Reposo</span><span id="kR" class="ipa">—</span></div>
           <input type="range" id="k" min="0" max="1" step="0.01" value="1" aria-label="Transición desde la posición de reposo">
         </div>
         <button type="button" class="btn" id="play"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg>Articular y escuchar</button>
+        <div class="phases" id="phases" hidden>
+          <p class="eyebrow">Fases de la articulación</p>
+          <ol class="steps" id="steps"></ol>
+          <p class="phase-txt" id="phaseTxt" aria-live="polite"></p>
+        </div>
       </div>
 
       <div class="card desc">
-        <h2 id="descTitle"><span class="ipa">[s]</span> fricativa alveolar sorda</h2>
+        <h2 id="descTitle">Posición de reposo</h2>
         <dl class="feat" id="descList"></dl>
         <p id="descText"></p>
       </div>

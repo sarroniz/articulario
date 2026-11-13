@@ -194,7 +194,7 @@ const dotTex = (() => {
 const flowMat = reg(new THREE.PointsMaterial({ size: 0.2, map: dotTex, transparent: true, depthWrite: false, color: 0x1d6fa5 }));
 const flow = new THREE.Points(flowGeo, flowMat); flow.frustumCulled = false; flow.renderOrder = 5; scene.add(flow);
 const parts = Array.from({ length: FLOW_N }, (_, i) => ({ s: Math.random(), p: i % 2, j: [Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1], sp: 0.85 + Math.random() * 0.3 }));
-let flowPaths = [], flowKind = 'none', flowKey = '', flowAlpha = 0, flowConstr = 0.7;
+let flowPaths = [], flowKind = 'none', flowKey = '', flowAlpha = 0, flowConstr = 0.7, burstUntil = 0, stopInfo = null, stopMode = 'hold';
 
 function oralMid(x, z, fallback) {
   let top = palY(x, z);
@@ -204,6 +204,7 @@ function oralMid(x, z, fallback) {
   return (top + t) / 2;
 }
 function computeFlow(key) {
+  if (key === 'rest') { flowPaths = []; flowKind = 'none'; flowKey = key; return; }
   const back = [[6.2, -6.6], [6.25, -5.1], [6.95, -3.7], [7.02, -2.1], [7.0, -0.4], [6.8, 1.1]];
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const mkBack = z => back.map(p => V(p[0], p[1], z));
@@ -235,6 +236,21 @@ function computeFlow(key) {
     };
     flowPaths = [pathFor(-1), pathFor(1)];
     flowKind = 'nasal';
+  } else if (key === 'p' || key === 'b') {
+    // oclusiva bilabial: el aire sube, se acumula detrás de los labios y sale de golpe en la explosión
+    const pts = mkBack(zc);
+    pts.push(V(6.15, oralMid(6.15, 0, 1.6), zc));
+    for (const x of [5.4, 4.6, 3.8, 3.0, 2.3]) pts.push(V(x, oralMid(x, 0, 1.4), zc));
+    const front = [V(1.75, oralMid(1.75, 0, 1.0), zc), V(1.15, 0.75, zc), V(0.75, 0.3, zc), V(0.45, -0.04, zc), V(0.15, 0.02, zc), V(-0.06, 0.04, zc)];
+    const closure = new THREE.CatmullRomCurve3([...pts, ...front], false, 'centripetal');
+    const release = new THREE.CatmullRomCurve3([...front, V(-0.7, 0.05, zc), V(-1.6, 0.0, zc), V(-2.8, -0.1, zc)], false, 'centripetal');
+    // fracción de la trayectoria cerrada donde empieza el tramo compartido con la de salida
+    const lens = closure.getLengths(400), L0 = closure.getLength();
+    let sa = 0.8;
+    for (let i = 0; i <= 400; i++) { if (closure.getPoint(i / 400).x < 1.75) { sa = lens[i] / L0; break; } }
+    stopInfo = { sa, L0, L1: release.getLength(), voiced: key === 'b' };
+    flowPaths = [closure, release];
+    flowKind = 'stop';
   } else {
     const pts = mkBack(zc);
     pts.push(V(6.15, oralMid(6.15, 0, 1.9), zc));
@@ -265,6 +281,7 @@ function updateFlow(dt, now) {
   flowMat.size = 0.24 * Math.tan(Math.PI / 12) / Math.tan(camera.fov * Math.PI / 360) / camera.zoom;
   if (!flow.visible) return;
   const speed = (flowKind === 'central' ? 0.2 : 0.16) * (reduceMotion ? 0.35 : 1);
+  if (flowKind === 'stop') { updateStopFlow(dt, now, speed); return; }
   for (let i = 0; i < FLOW_N; i++) {
     const q = parts[i];
     q.s += dt * speed * q.sp;
@@ -282,6 +299,38 @@ function updateFlow(dt, now) {
       amp = q.s < 0.35 ? 0.16 : 0.08;
       _v.x += q.j[0] * amp; _v.y += q.j[1] * amp; _v.z += q.j[2] * amp;
     }
+    flowPos[i * 3] = _v.x; flowPos[i * 3 + 1] = _v.y; flowPos[i * 3 + 2] = _v.z;
+  }
+  flowGeo.attributes.position.needsUpdate = true;
+}
+
+// Oclusiva: durante la oclusión las partículas se frenan y se acumulan detrás de la oclusión;
+// en la explosión, las del tramo delantero salen de golpe; en la salida, el aire fluye sin obstáculo.
+function resetStopFlow() {
+  for (const q of parts) { q.s = 0.35 + Math.random() * 0.5; q.rel = -1; }
+}
+function spreadStopFlow() {
+  for (const q of parts) if (!(q.rel >= 0)) q.s = Math.random();
+}
+function updateStopFlow(dt, now, speed) {
+  const [closure, release] = flowPaths, { sa, L0, L1 } = stopInfo, bursting = now < burstUntil, open = stopMode === 'open';
+  for (let i = 0; i < FLOW_N; i++) {
+    const q = parts[i];
+    let amp;
+    if (q.rel >= 0) {
+      q.rel += dt * (bursting ? 0.9 : 0.7);
+      if (q.rel >= 1) { q.rel = -1; q.s = open ? Math.random() * sa : Math.random() * 0.15; continue; }
+      release.getPointAt(q.rel, _v);
+      amp = 0.05 + 0.3 * q.rel;
+    } else {
+      q.s = open ? Math.min(0.999, q.s + dt * speed * q.sp * 2) : Math.min(0.995, q.s + dt * speed * q.sp * (stopInfo.voiced ? 3.3 : 6) * Math.max(0.03, 1 - q.s));
+      if ((bursting || open) && q.s > sa) { q.rel = clamp((q.s - sa) * L0 / L1, 0, 0.4); i--; continue; }
+      if (!bursting && !open && q.s > 0.97 && Math.random() < dt * 0.5) q.s = Math.random() * 0.1;
+      closure.getPointAt(q.s, _v);
+      amp = q.s < 0.35 ? 0.16 : 0.06 + 0.1 * smooth(0.85, 1, q.s);
+    }
+    _v.x += q.j[0] * amp; _v.y += q.j[1] * amp; _v.z += q.j[2] * Math.min(amp, 0.06);
+    if (_v.z > 0) _v.z = -_v.z * 0.5;
     flowPos[i * 3] = _v.x; flowPos[i * 3 + 1] = _v.y; flowPos[i * 3 + 2] = _v.z;
   }
   flowGeo.attributes.position.needsUpdate = true;

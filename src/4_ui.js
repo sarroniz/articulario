@@ -2,9 +2,9 @@
 /* ============================================================
    Estado
    ============================================================ */
-let sound = 's', view = '3d';
+let sound = 'rest', view = '3d'; // al abrir: posición de reposo, sin sonido elegido
 const targetKey = () => sound;
-let cur = mixPosture(POSTURES.rest, POSTURES.s, 1);
+let cur = mixPosture(POSTURES.rest, POSTURES.rest, 1);
 let kNow = 1, tween = null, dirty = true, playing = false;
 const corX = () => parseFloat($('corX').value);
 const fmt = (n, d = 1) => n.toFixed(d).replace('.', ',');
@@ -135,6 +135,11 @@ function updateCorText() {
 
 /* ---------------- Descripciones ---------------- */
 const DESC = {
+  rest: {
+    title: 'Posición de reposo', kR: '—',
+    list: [['Labios', 'juntos'], ['Lengua', 'relajada'], ['Velo', 'bajado (respiración nasal)'], ['Glotis', 'abierta']],
+    text: 'Así está el tracto vocal cuando no se habla: los labios están juntos, la lengua descansa con la punta detrás de los incisivos inferiores, el velo del paladar está bajado para respirar por la nariz y las cuerdas vocales están separadas. Elige un sonido en el cuadro para ver cómo se articula.'
+  },
   s: {
     title: '<span class="ipa">[s]</span> fricativa alveolar sorda', kR: '[s]',
     list: [['Punto', 'alveolar'], ['Modo', 'fricativo'], ['Sonoridad', 'sorda'], ['Velo', 'elevado (oral)']],
@@ -144,6 +149,16 @@ const DESC = {
     title: '<span class="ipa">[l]</span> lateral alveolar sonora', kR: '[l]',
     list: [['Punto', 'alveolar'], ['Modo', 'lateral'], ['Sonoridad', 'sonora'], ['Velo', 'elevado (oral)']],
     text: 'El ápice de la lengua se apoya en los alvéolos y cierra el paso del aire en la línea media. Los bordes de la lengua descienden y dejan, a uno o a ambos lados, un canal por el que el aire sale sin turbulencia. El dorso se mantiene adelantado, sin elevarse hacia el velo. Las cuerdas vocales vibran durante toda la articulación. En el palatograma solo hay contacto en la zona alveolar central.'
+  },
+  p: {
+    title: '<span class="ipa">[p]</span> oclusiva bilabial sorda', kR: '[p]',
+    list: [['Punto', 'bilabial'], ['Modo', 'oclusivo'], ['Sonoridad', 'sorda'], ['Velo', 'elevado (oral)']],
+    text: 'Los labios se cierran por completo y el velo del paladar está elevado, así que el aire no puede salir ni por la boca ni por la nariz: se acumula detrás de los labios y aumenta la presión. Cuando los labios se separan, el aire sale de golpe y produce una breve explosión. Las cuerdas vocales están separadas y no vibran. En español la [p] no es aspirada: la vibración de la vocal siguiente empieza casi inmediatamente después de la explosión. La lengua no participa en la articulación y en el palatograma no aparece ningún contacto.'
+  },
+  b: {
+    title: '<span class="ipa">[b]</span> oclusiva bilabial sonora', kR: '[b]',
+    list: [['Punto', 'bilabial'], ['Modo', 'oclusivo'], ['Sonoridad', 'sonora'], ['Velo', 'elevado (oral)']],
+    text: 'Los labios se cierran por completo y el velo del paladar está elevado, así que el aire no puede salir ni por la boca ni por la nariz y se acumula detrás de los labios. Las cuerdas vocales vibran durante toda la oclusión, por eso antes de la explosión se oye un murmullo grave. Al separarse los labios, el aire sale en una explosión suave y la vocal siguiente empieza sin interrupción. En español, /b/ se pronuncia como oclusiva tras pausa o tras nasal, como en «un beso»; en las demás posiciones se realiza como aproximante [β]. La lengua no participa y en el palatograma no aparece ningún contacto.'
   },
   m: {
     title: '<span class="ipa">[m]</span> nasal bilabial sonora', kR: '[m]',
@@ -177,7 +192,7 @@ const VOWELS = [
   ['o', 'vocal posterior media', 100, 50], ['u', 'vocal posterior alta', 100, 0],
   ['j', 'aproximante palatal', 24, 0, '/i/ en diptongo'], ['w', 'aproximante labiovelar', 84, 0, '/u/ en diptongo']
 ];
-const KEY_OF = { s: 's', l: 'l', m: 'm' }; // símbolo → postura disponible en el modelo
+const KEY_OF = { s: 's', l: 'l', m: 'm', p: 'p', b: 'b' }; // símbolo → postura disponible en el modelo
 function sndBtn(sym, name, allo) {
   const b = document.createElement('button'), key = KEY_OF[sym];
   b.type = 'button';
@@ -231,7 +246,9 @@ function renderDesc() {
   $('descList').innerHTML = d.list.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('');
   $('descText').textContent = d.text;
   $('kR').textContent = d.kR;
+  $('k').disabled = $('play').disabled = sound === 'rest';
   for (const b of document.querySelectorAll('.snd[data-key]')) b.setAttribute('aria-pressed', b.dataset.key === sound);
+  renderSteps();
 }
 
 /* ---------------- Audio sintético ---------------- */
@@ -275,6 +292,60 @@ function playL(dur) {
   osc.start(t0); vib.start(t0); osc.stop(t0 + dur + 0.05); vib.stop(t0 + dur + 0.05);
 }
 
+function playP() {
+  // explosión breve, sin aspiración, con la energía en frecuencias bajas
+  const a = ac(); if (!a) return;
+  const t0 = a.currentTime + 0.02, len = Math.floor(a.sampleRate * 0.08);
+  const buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (a.sampleRate * 0.006));
+  const src = a.createBufferSource(); src.buffer = buf;
+  const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 0.7;
+  const g = a.createGain(); g.gain.value = 1.6;
+  src.connect(bp).connect(g).connect(a.destination);
+  src.start(t0);
+}
+function playB() {
+  // explosión suave de la oclusiva sonora
+  const a = ac(); if (!a) return;
+  const t0 = a.currentTime + 0.02, len = Math.floor(a.sampleRate * 0.06);
+  const buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (a.sampleRate * 0.004));
+  const src = a.createBufferSource(); src.buffer = buf;
+  const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.7;
+  const g = a.createGain(); g.gain.value = 0.8;
+  src.connect(bp).connect(g).connect(a.destination);
+  src.start(t0);
+}
+function playVoiceBar(dur) {
+  // murmullo grave de las cuerdas vocales durante la oclusión (barra de sonoridad)
+  const a = ac(); if (!a) return;
+  const t0 = a.currentTime + 0.02, N = 24, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
+  for (let n = 1; n <= N; n++) im[n] = 1 / Math.pow(n, 1.4);
+  const osc = a.createOscillator(); osc.setPeriodicWave(a.createPeriodicWave(re, im));
+  osc.frequency.setValueAtTime(122, t0); osc.frequency.linearRampToValueAtTime(116, t0 + dur);
+  const low = a.createBiquadFilter(); low.type = 'lowpass'; low.frequency.value = 280; low.Q.value = 0.7;
+  const env = a.createGain();
+  env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(0.45, t0 + 0.06); env.gain.setValueAtTime(0.45, t0 + dur - 0.08); env.gain.linearRampToValueAtTime(0, t0 + dur);
+  osc.connect(low).connect(env).connect(a.destination);
+  osc.start(t0); osc.stop(t0 + dur + 0.05);
+}
+function playOnset(dur) {
+  // comienzo breve de una vocal abierta, para ilustrar la vocal que sigue a la oclusiva
+  const a = ac(); if (!a) return;
+  const t0 = a.currentTime + 0.01, N = 48, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
+  for (let n = 1; n <= N; n++) im[n] = 1 / Math.pow(n, 1.25);
+  const osc = a.createOscillator(); osc.setPeriodicWave(a.createPeriodicWave(re, im));
+  osc.frequency.setValueAtTime(125, t0); osc.frequency.linearRampToValueAtTime(112, t0 + dur);
+  const sum = a.createGain();
+  for (const [f, q, gn] of [[750, 5, 1.0], [1250, 7, 0.55], [2600, 10, 0.25]]) {
+    const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q;
+    const gg = a.createGain(); gg.gain.value = gn; osc.connect(bp).connect(gg).connect(sum);
+  }
+  const env = a.createGain();
+  env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(0.7, t0 + 0.03); env.gain.setValueAtTime(0.7, t0 + dur - 0.1); env.gain.linearRampToValueAtTime(0, t0 + dur);
+  sum.connect(env).connect(a.destination);
+  osc.start(t0); osc.stop(t0 + dur + 0.05);
+}
 function playM(dur) {
   // murmullo nasal: resonancia grave (~260 Hz) y antirresonancia bilabial (~1000 Hz)
   const a = ac(); if (!a) return;
@@ -332,8 +403,8 @@ function applyClip() {
 }
 
 /* ---------------- Transiciones de postura ---------------- */
-function tweenTo(target, dur, done) {
-  tween = { from: cur, to: target, t0: performance.now(), dur: reduceMotion ? 1 : dur, done };
+function tweenTo(target, dur, done, keepK) {
+  tween = { from: cur, to: target, t0: performance.now(), dur: reduceMotion ? 1 : dur, done, keepK };
 }
 function goTarget() {
   renderDesc();
@@ -341,18 +412,24 @@ function goTarget() {
   corPlane.constant = -corX(); corBack.constant = corX() + 0.3;
   if (view === 'cor') { const dx = corX() - controls.target.x; camera.position.x += dx; controls.target.x += dx; syncCaps(); }
   $('k').value = 1;
+  seqId++; playing = false; stopMode = 'hold'; burstUntil = 0;
+  stopPhase = STOPS[sound] ? 2 : 0;
+  renderSteps();
   tweenTo(POSTURES[targetKey()], 650);
 }
 function setFromSlider() {
   tween = null;
+  seqId++; playing = false;
+  if (STOPS[sound]) { stopPhase = 0; stopMode = 'hold'; burstUntil = 0; renderSteps(); }
   kNow = parseFloat($('k').value);
   cur = mixPosture(POSTURES.rest, POSTURES[targetKey()], kNow);
   dirty = true;
 }
 function articulate() {
-  if (playing) return;
+  if (playing || sound === 'rest') return;
   playing = true;
   const tk = targetKey();
+  if (STOPS[tk]) { runPhases(); return; }
   cur = mixPosture(POSTURES.rest, POSTURES.rest, 0); dirty = true;
   $('k').value = 1;
   tweenTo(POSTURES[tk], 480, () => {
@@ -360,6 +437,75 @@ function articulate() {
     if (tk === 'l') playL(dur); else if (tk === 'm') playM(dur); else playS(false, dur);
     setTimeout(() => { playing = false; }, dur * 1000);
   });
+}
+
+/* ---------------- Fases de las oclusivas ---------------- */
+// Cada oclusiva define sus posturas (oclusión, explosión, salida) y el texto de cada fase.
+const STOPS = {
+  p: {
+    closure: 'p', release: 'p_rel', out: 'p_out', burst: () => playP(),
+    phases: [
+      ['Cierre', 'Los labios se acercan hasta tocarse y el velo del paladar se eleva y cierra el paso hacia la nariz.'],
+      ['Oclusión', 'Con la boca y la nariz cerradas, el aire que llega de los pulmones se acumula detrás de los labios y la presión aumenta. Durante esta fase no se oye nada.'],
+      ['Explosión', 'Los labios se separan de golpe y el aire comprimido sale de una vez. Esa salida brusca produce un ruido muy breve: la explosión.'],
+      ['Salida', 'Tras la explosión empieza la vocal siguiente. En español las cuerdas vocales empiezan a vibrar casi enseguida, sin aspiración.']
+    ]
+  },
+  b: {
+    closure: 'b', release: 'b_rel', out: 'b_out', burst: () => playB(), hold: () => playVoiceBar(1.3),
+    phases: [
+      ['Cierre', 'Los labios se acercan hasta tocarse y el velo del paladar se eleva y cierra el paso hacia la nariz. Las cuerdas vocales ya están vibrando.'],
+      ['Oclusión', 'Con la boca y la nariz cerradas, las cuerdas vocales siguen vibrando y se oye un murmullo grave. Como la glotis está casi cerrada para vibrar, el aire llega poco a poco y la presión detrás de los labios sube despacio.'],
+      ['Explosión', 'Los labios se separan y el aire acumulado sale en una explosión suave. Las cuerdas vocales no dejan de vibrar.'],
+      ['Salida', 'La vocal siguiente empieza sin interrupción: la vibración de las cuerdas vocales continúa desde la oclusión.']
+    ]
+  }
+};
+let stopPhase = 0, seqId = 0;
+function renderSteps() {
+  const st = STOPS[sound], box = $('phases');
+  box.hidden = !st;
+  if (!st) return;
+  const ol = $('steps');
+  if (ol.dataset.key !== sound) {
+    ol.dataset.key = sound;
+    ol.innerHTML = st.phases.map(([name], i) => `<li><button type="button" class="step" data-n="${i + 1}"><b>${i + 1}</b>${name}</button></li>`).join('');
+    for (const b of ol.querySelectorAll('.step')) b.addEventListener('click', () => { seqId++; playing = false; setPhase(+b.dataset.n); });
+  }
+  for (const b of ol.querySelectorAll('.step')) {
+    if (+b.dataset.n === stopPhase) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  }
+  $('phaseTxt').textContent = stopPhase ? st.phases[stopPhase - 1][1] : 'Pulsa una fase para verla, o «Articular y escuchar» para recorrerlas todas.';
+}
+function setPhase(n, withSound) {
+  const st = STOPS[sound]; if (!st) return;
+  stopPhase = n; $('k').value = 1; renderSteps();
+  const P = POSTURES;
+  if (n === 1) {
+    stopMode = 'hold'; burstUntil = 0; resetStopFlow();
+    tweenTo(P[st.release], 250, () => tweenTo(P[st.closure], 700, null, true), true);
+  } else if (n === 2) {
+    stopMode = 'hold'; burstUntil = 0;
+    if (withSound !== false && st.hold) st.hold();
+    tweenTo(P[st.closure], 300, null, true);
+  } else if (n === 3) {
+    stopMode = 'hold'; burstUntil = performance.now() + 700;
+    if (withSound !== false) st.burst();
+    tweenTo(P[st.release], 90, null, true);
+  } else if (n === 4) {
+    stopMode = 'open'; burstUntil = 0; spreadStopFlow();
+    if (withSound !== false) playOnset(0.45);
+    tweenTo(P[st.out], 260, null, true);
+  }
+}
+// Recorre las cuatro fases a cámara lenta
+function runPhases() {
+  const id = ++seqId, plan = [[1, 0], [2, 1050], [3, 2500], [4, 3150], [0, 4600]];
+  playing = true;
+  for (const [n, t] of plan) setTimeout(() => {
+    if (id !== seqId) return;
+    if (n) setPhase(n); else playing = false;
+  }, t);
 }
 
 /* ---------------- Eventos ---------------- */
@@ -407,7 +553,7 @@ function frame(now) {
   if (tween) {
     const t = clamp((now - tween.t0) / tween.dur, 0, 1), e = easeIO(t);
     cur = mixPosture(tween.from, tween.to, e);
-    kNow = e; dirty = true;
+    kNow = tween.keepK ? 1 : e; dirty = true;
     if (t >= 1) { const d = tween.done; tween = null; kNow = 1; d && d(); }
   }
   if (camTween) {
@@ -420,7 +566,7 @@ function frame(now) {
     if (t >= 1) { camTween = null; controls.enabled = view !== 'pal'; }
   }
   if (dirty) { applyPosture(); dirty = false; }
-  flowAlpha = smooth(0.82, 1, kNow);
+  flowAlpha = smooth(0.82, 1, kNow) * (stopPhase === 1 ? 0 : 1);
   if (flowAlpha > 0.01 && flowKey !== targetKey()) computeFlow(targetKey());
   // cuerdas vocales
   foldsT += dt;

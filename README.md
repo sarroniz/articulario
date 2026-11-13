@@ -1,6 +1,6 @@
 # Articulario
 
-Prototipo de modelo 3D esquemático del tracto vocal para ver cómo se articulan [s], [l] y [m] en español. Es una página web: HTML + JavaScript con [three.js](https://threejs.org) (licencia MIT, copia incluida en `vendor/`). Python solo se usa para construir y servir la página.
+Prototipo de modelo 3D esquemático del tracto vocal para ver cómo se articulan [s], [l], [m], [p] y [b] en español. Es una página web: HTML + JavaScript con [three.js](https://threejs.org) (licencia MIT, copia incluida en `vendor/`). Python solo se usa para construir y servir la página.
 
 ## Cómo abrirla
 
@@ -33,7 +33,7 @@ En centímetros: **x** hacia atrás, **y** hacia arriba y **z** lateral. El plan
 
 ## Editar una postura (`POSTURES` en `src/2_model.js`)
 
-Las posturas en uso son `rest` (reposo), `s`, `l` y `m`. También está guardada `s_ap`, una [s] apicoalveolar que la interfaz no usa por ahora.
+Las posturas en uso son `rest` (reposo), `s`, `l`, `m`, `p` y `b`. Las que terminan en `_rel` (explosión) y `_out` (salida) son fases de las oclusivas; solo se usan en la animación por fases. También está guardada `s_ap`, una [s] apicoalveolar que la interfaz no usa por ahora.
 
 | Parámetro | Qué controla |
 |---|---|
@@ -55,5 +55,13 @@ La lengua puede pasarse de largo hacia arriba: el código la recorta contra el p
 2. En `src/4_ui.js`, añade su entrada en `DESC` y enlaza su símbolo con la postura en `KEY_OF` (por ejemplo `t̪: 't'`). El símbolo ya aparece, atenuado, en el cuadro de consonantes (`CONS`) o en el trapecio (`VOWELS`); al enlazarlo se vuelve seleccionable.
 3. Si tiene flujo de aire, añade su trayectoria en `computeFlow` (`src/3_scene.js`).
 4. Ejecuta `python3 build.py`.
+
+### Oclusivas
+
+Las oclusivas se muestran en cuatro fases: cierre, oclusión, explosión y salida. Para añadir una (por ejemplo [t]):
+
+1. En `POSTURES` crea tres posturas: la oclusión (`t`), la apertura en la explosión (`t_rel`) y la salida con las cuerdas vocales vibrando (`t_out`).
+2. En `STOPS` (`src/4_ui.js`) añade una entrada con esas tres claves, la función de audio de la explosión y el texto de cada fase.
+3. En `computeFlow` (`src/3_scene.js`) define dos trayectorias: la que lleva el aire hasta detrás de la oclusión y la de salida tras la explosión. `updateStopFlow` ya se encarga de acumular el aire, de la explosión y de la salida.
 
 Las posturas están definidas a mano a partir de descripciones articulatorias habituales, no a partir de datos de un hablante.
