@@ -1,6 +1,6 @@
 # Articulario
 
-Prototipo de modelo 3D esquemático del tracto vocal para ver cómo se articulan [s] y [l] en español. Es una página web: HTML + JavaScript con [three.js](https://threejs.org) (licencia MIT, copia incluida en `vendor/`). Python solo se usa para construir y servir la página.
+Prototipo de modelo 3D esquemático del tracto vocal para ver cómo se articulan [s], [l] y [m] en español. Es una página web: HTML + JavaScript con [three.js](https://threejs.org) (licencia MIT, copia incluida en `vendor/`). Python solo se usa para construir y servir la página.
 
 ## Cómo abrirla
 
@@ -21,7 +21,7 @@ y abre <http://localhost:8000> en el navegador. Hace falta el servidor porque lo
 | `src/1_util_anatomy.js` | Utilidades (splines), paladar, arcadas, dientes, constructores de geometría, material con relleno de corte |
 | `src/2_model.js` | **Posturas** (`POSTURES`), modelo paramétrico de la lengua, colisión con paladar y dientes, mapa de contactos, velo, faringe, laringe, labios |
 | `src/3_scene.js` | Escena, colores, relleno de los cortes, flujo de aire, etiquetas |
-| `src/4_ui.js` | Estado, palatograma EPG, glotis, descripciones de cada sonido (`DESC`), audio sintético, vistas y cámara |
+| `src/4_ui.js` | Estado, cuadro AFI de consonantes y trapecio vocálico, palatograma EPG, glotis, descripciones de cada sonido (`DESC`), audio sintético, vistas y cámara |
 | `plantilla.html` | Maquetación y CSS; `/*__APP__*/` marca dónde se inserta el JavaScript |
 | `build.py` | Une `plantilla.html` y `src/*.js` y genera los dos HTML |
 
@@ -33,7 +33,7 @@ En centímetros: **x** hacia atrás, **y** hacia arriba y **z** lateral. El plan
 
 ## Editar una postura (`POSTURES` en `src/2_model.js`)
 
-Las posturas en uso son `rest` (reposo), `s` y `l`. También está guardada `s_ap`, una [s] apicoalveolar que la interfaz no usa por ahora.
+Las posturas en uso son `rest` (reposo), `s`, `l` y `m`. También está guardada `s_ap`, una [s] apicoalveolar que la interfaz no usa por ahora.
 
 | Parámetro | Qué controla |
 |---|---|
@@ -52,7 +52,7 @@ La lengua puede pasarse de largo hacia arriba: el código la recorta contra el p
 ## Añadir un sonido
 
 1. Copia una postura en `POSTURES` con una clave nueva (por ejemplo `t`) y ajusta sus parámetros.
-2. Añade un botón en `plantilla.html` y, en `src/4_ui.js`, su entrada en `DESC`, su caso en `targetKey()` y el evento del botón.
+2. En `src/4_ui.js`, añade su entrada en `DESC` y enlaza su símbolo con la postura en `KEY_OF` (por ejemplo `t̪: 't'`). El símbolo ya aparece, atenuado, en el cuadro de consonantes (`CONS`) o en el trapecio (`VOWELS`); al enlazarlo se vuelve seleccionable.
 3. Si tiene flujo de aire, añade su trayectoria en `computeFlow` (`src/3_scene.js`).
 4. Ejecuta `python3 build.py`.
 

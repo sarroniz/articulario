@@ -144,16 +144,94 @@ const DESC = {
     title: '<span class="ipa">[l]</span> lateral alveolar sonora', kR: '[l]',
     list: [['Punto', 'alveolar'], ['Modo', 'lateral'], ['Sonoridad', 'sonora'], ['Velo', 'elevado (oral)']],
     text: 'El ápice de la lengua se apoya en los alvéolos y cierra el paso del aire en la línea media. Los bordes de la lengua descienden y dejan, a uno o a ambos lados, un canal por el que el aire sale sin turbulencia. El dorso se mantiene adelantado, sin elevarse hacia el velo. Las cuerdas vocales vibran durante toda la articulación. En el palatograma solo hay contacto en la zona alveolar central.'
+  },
+  m: {
+    title: '<span class="ipa">[m]</span> nasal bilabial sonora', kR: '[m]',
+    list: [['Punto', 'bilabial'], ['Modo', 'nasal'], ['Sonoridad', 'sonora'], ['Velo', 'descendido (nasal)']],
+    text: 'Los labios se cierran por completo e impiden que el aire salga por la boca. El velo del paladar desciende y abre el paso hacia las fosas nasales, así que el aire sale por la nariz. La lengua no participa en la articulación y queda en una posición neutra, preparada para el sonido siguiente. Las cuerdas vocales vibran durante toda la articulación. En el palatograma no aparece ningún contacto.'
   }
 };
+/* ---------------- Inventario: cuadro AFI ---------------- */
+const PLACES = [['Bil.', 'bilabial'], ['Lbd.', 'labiodental'], ['Den.', 'dental'], ['Alv.', 'alveolar'], ['Pal.', 'palatal'], ['Vel.', 'velar']];
+const MANNERS = ['Oclusiva', 'Nasal', 'Fricativa', 'Africada', 'Aproximante', 'Lateral', 'Vibrante simple', 'Vibrante múltiple'];
+// [modo, punto, sonora, símbolo, nombre, alófono de]
+const CONS = [
+  [0, 0, 0, 'p', 'oclusiva bilabial sorda'], [0, 0, 1, 'b', 'oclusiva bilabial sonora'],
+  [0, 2, 0, 't̪', 'oclusiva dental sorda'], [0, 2, 1, 'd̪', 'oclusiva dental sonora'],
+  [0, 5, 0, 'k', 'oclusiva velar sorda'], [0, 5, 1, 'g', 'oclusiva velar sonora'],
+  [1, 0, 1, 'm', 'nasal bilabial sonora'], [1, 1, 1, 'ɱ', 'nasal labiodental sonora', '/n/ ante /f/'],
+  [1, 2, 1, 'n̪', 'nasal dental sonora', '/n/ ante /t d/'], [1, 3, 1, 'n', 'nasal alveolar sonora'],
+  [1, 4, 1, 'ɲ', 'nasal palatal sonora'], [1, 5, 1, 'ŋ', 'nasal velar sonora', '/n/ ante /k g x/'],
+  [2, 1, 0, 'f', 'fricativa labiodental sorda'], [2, 3, 0, 's', 'fricativa alveolar sorda'],
+  [2, 3, 1, 'z', 'fricativa alveolar sonora', '/s/ ante consonante sonora'], [2, 4, 1, 'ʝ', 'fricativa palatal sonora'],
+  [2, 5, 0, 'x', 'fricativa velar sorda'],
+  [3, 4, 0, 'tʃ', 'africada palatal sorda'], [3, 4, 1, 'ɟʝ', 'africada palatal sonora', '/ʝ/ tras pausa, nasal o lateral'],
+  [4, 0, 1, 'β', 'aproximante bilabial sonora', '/b/'], [4, 2, 1, 'ð', 'aproximante dental sonora', '/d/'],
+  [4, 5, 1, 'ɣ', 'aproximante velar sonora', '/g/'],
+  [5, 2, 1, 'l̪', 'lateral dental sonora', '/l/ ante /t d/'], [5, 3, 1, 'l', 'lateral alveolar sonora'],
+  [6, 3, 1, 'ɾ', 'vibrante simple alveolar sonora'], [7, 3, 1, 'r', 'vibrante múltiple alveolar sonora']
+];
+// [símbolo, nombre, x %, y %, alófono de] sobre el trapecio
+const VOWELS = [
+  ['i', 'vocal anterior alta', 8, 0], ['e', 'vocal anterior media', 30, 50], ['a', 'vocal central baja', 68, 100],
+  ['o', 'vocal posterior media', 100, 50], ['u', 'vocal posterior alta', 100, 0],
+  ['j', 'aproximante palatal', 24, 0, '/i/ en diptongo'], ['w', 'aproximante labiovelar', 84, 0, '/u/ en diptongo']
+];
+const KEY_OF = { s: 's', l: 'l', m: 'm' }; // símbolo → postura disponible en el modelo
+function sndBtn(sym, name, allo) {
+  const b = document.createElement('button'), key = KEY_OF[sym];
+  b.type = 'button';
+  b.className = 'snd' + (allo ? ' al' : '') + (sym === 'tʃ' || sym === 'ɟʝ' ? ' dg' : '');
+  b.textContent = sym;
+  const full = `[${sym}] ${name}` + (allo ? `, alófono de ${allo}` : '');
+  b.setAttribute('aria-label', key ? full : full + ' (próximamente)');
+  b.title = key ? full : full + ' · próximamente';
+  if (key) {
+    b.classList.add('on'); b.dataset.key = key; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => { if (sound !== key) { sound = key; goTarget(); } });
+  } else b.setAttribute('aria-disabled', 'true');
+  return b;
+}
+function buildInventory() {
+  const t = $('tblC');
+  t.innerHTML = '<colgroup><col class="mh">' + PLACES.map(() => '<col>').join('') + '</colgroup><thead><tr><th scope="col"><span class="vh">Modo</span></th>' +
+    PLACES.map(([ab, full]) => `<th scope="col"><abbr title="${full}">${ab}</abbr></th>`).join('') + '</tr></thead><tbody></tbody>';
+  MANNERS.forEach((mn, r) => {
+    const tr = document.createElement('tr'), th = document.createElement('th');
+    th.scope = 'row'; th.textContent = mn; tr.appendChild(th);
+    PLACES.forEach((_, c) => {
+      const td = document.createElement('td'), cell = document.createElement('div');
+      cell.className = 'cell';
+      for (const v of [0, 1]) {
+        const e = CONS.find(x => x[0] === r && x[1] === c && x[2] === v);
+        cell.appendChild(e ? sndBtn(e[3], e[4], e[5]) : document.createElement('span'));
+      }
+      td.appendChild(cell); tr.appendChild(td);
+    });
+    t.tBodies[0].appendChild(tr);
+  });
+  const v = $('tblV');
+  v.innerHTML = '<div class="plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M8 0 L100 0 L100 100 L46 100 Z M27 50 L100 50"/></svg></div>';
+  const plot = v.firstChild;
+  for (const [txt, x, y] of [['anterior', 8, -26], ['central', 54, -26], ['posterior', 94, -26]]) {
+    const l = document.createElement('span'); l.className = 'lab'; l.textContent = txt; l.style.left = x + '%'; l.style.top = y + 'px'; plot.appendChild(l);
+  }
+  for (const [txt, y] of [['alta', 0], ['media', 50], ['baja', 100]]) {
+    const l = document.createElement('span'); l.className = 'lab'; l.textContent = txt; l.style.left = '-28px'; l.style.top = y + '%'; plot.appendChild(l);
+  }
+  for (const [sym, name, x, y, allo] of VOWELS) {
+    const b = sndBtn(sym, name, allo); b.style.left = x + '%'; b.style.top = y + '%'; plot.appendChild(b);
+  }
+}
+buildInventory();
+
 function renderDesc() {
   const d = DESC[targetKey()];
   $('descTitle').innerHTML = d.title;
   $('descList').innerHTML = d.list.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('');
   $('descText').textContent = d.text;
   $('kR').textContent = d.kR;
-  $('btnS').setAttribute('aria-pressed', sound === 's');
-  $('btnL').setAttribute('aria-pressed', sound === 'l');
+  for (const b of document.querySelectorAll('.snd[data-key]')) b.setAttribute('aria-pressed', b.dataset.key === sound);
 }
 
 /* ---------------- Audio sintético ---------------- */
@@ -191,6 +269,28 @@ function playL(dur) {
     const gg = a.createGain(); gg.gain.value = gn; osc.connect(bp).connect(gg).connect(sum);
   }
   const notch = a.createBiquadFilter(); notch.type = 'notch'; notch.frequency.value = 2100; notch.Q.value = 2.5;
+  const env = a.createGain();
+  env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(0.75, t0 + 0.07); env.gain.setValueAtTime(0.75, t0 + dur - 0.12); env.gain.linearRampToValueAtTime(0, t0 + dur);
+  sum.connect(notch).connect(env).connect(a.destination);
+  osc.start(t0); vib.start(t0); osc.stop(t0 + dur + 0.05); vib.stop(t0 + dur + 0.05);
+}
+
+function playM(dur) {
+  // murmullo nasal: resonancia grave (~260 Hz) y antirresonancia bilabial (~1000 Hz)
+  const a = ac(); if (!a) return;
+  const t0 = a.currentTime + 0.03, N = 48, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
+  for (let n = 1; n <= N; n++) im[n] = 1 / Math.pow(n, 1.25);
+  const osc = a.createOscillator(); osc.setPeriodicWave(a.createPeriodicWave(re, im));
+  osc.frequency.setValueAtTime(122, t0); osc.frequency.linearRampToValueAtTime(110, t0 + dur);
+  const vib = a.createOscillator(), vg = a.createGain(); vib.frequency.value = 5.3; vg.gain.value = 1.4; vib.connect(vg).connect(osc.frequency);
+  const sum = a.createGain();
+  const low = a.createBiquadFilter(); low.type = 'lowpass'; low.frequency.value = 350; low.Q.value = 0.8;
+  const lg = a.createGain(); lg.gain.value = 0.5; osc.connect(low).connect(lg).connect(sum);
+  for (const [f, q, gn] of [[260, 4, 1.0], [2100, 9, 0.12], [2800, 10, 0.08]]) {
+    const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q;
+    const gg = a.createGain(); gg.gain.value = gn; osc.connect(bp).connect(gg).connect(sum);
+  }
+  const notch = a.createBiquadFilter(); notch.type = 'notch'; notch.frequency.value = 1000; notch.Q.value = 2;
   const env = a.createGain();
   env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(0.75, t0 + 0.07); env.gain.setValueAtTime(0.75, t0 + dur - 0.12); env.gain.linearRampToValueAtTime(0, t0 + dur);
   sum.connect(notch).connect(env).connect(a.destination);
@@ -257,15 +357,16 @@ function articulate() {
   $('k').value = 1;
   tweenTo(POSTURES[tk], 480, () => {
     const dur = 0.95;
-    if (tk === 'l') playL(dur); else playS(false, dur);
+    if (tk === 'l') playL(dur); else if (tk === 'm') playM(dur); else playS(false, dur);
     setTimeout(() => { playing = false; }, dur * 1000);
   });
 }
 
 /* ---------------- Eventos ---------------- */
 for (const b of document.querySelectorAll('.view-tabs button')) b.addEventListener('click', () => setView(b.dataset.view));
-$('btnS').addEventListener('click', () => { if (sound !== 's') { sound = 's'; goTarget(); } });
-$('btnL').addEventListener('click', () => { if (sound !== 'l') { sound = 'l'; goTarget(); } });
+for (const [id, show] of [['tabC', 'tblC'], ['tabV', 'tblV']]) $(id).addEventListener('click', () => {
+  for (const [i2, t2] of [['tabC', 'tblC'], ['tabV', 'tblV']]) { $(i2).setAttribute('aria-pressed', i2 === id); $(t2).hidden = t2 !== show; }
+});
 $('k').addEventListener('input', setFromSlider);
 $('play').addEventListener('click', articulate);
 $('tContact').addEventListener('change', () => { paintContacts(); });

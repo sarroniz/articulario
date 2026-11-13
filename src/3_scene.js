@@ -226,6 +226,15 @@ function computeFlow(key) {
     };
     flowPaths = [pathFor(-1), pathFor(1)];
     flowKind = 'lateral';
+  } else if (key === 'm') {
+    // nasal: el aire sube por detrás del velo bajado y sale por las fosas nasales
+    const pathFor = sd => {
+      const pts = [[6.2, -6.6], [6.25, -5.1], [6.95, -3.7], [7.05, -2.1], [7.15, -0.4], [7.42, 0.9], [7.42, 2.1]].map(p => V(p[0], p[1], 0));
+      for (const [x, y, z] of [[7.0, 3.15, 0.15], [6.1, 3.45, 0.3], [5.0, 3.55, 0.32], [3.8, 3.6, 0.32], [2.6, 3.55, 0.32], [1.4, 3.35, 0.3], [0.3, 3.1, 0.3], [-0.8, 2.8, 0.3], [-1.6, 2.5, 0.32], [-2.15, 2.3, 0.35], [-2.6, 1.7, 0.4], [-3.0, 0.9, 0.45]]) pts.push(V(x, y, sd * z));
+      return new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    };
+    flowPaths = [pathFor(-1), pathFor(1)];
+    flowKind = 'nasal';
   } else {
     const pts = mkBack(zc);
     pts.push(V(6.15, oralMid(6.15, 0, 1.9), zc));

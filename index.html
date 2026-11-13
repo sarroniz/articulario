@@ -42,7 +42,6 @@ body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--f-body
 .ipa { font-family: var(--f-ipa); font-feature-settings: "liga" 0; }
 header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
 header.top h1 { margin: 0; font: 700 30px/1.1 var(--f-ipa); letter-spacing: 0.01em; }
-header.top p { margin: 0; font: italic 400 19px/1.2 var(--f-ipa); color: var(--muted); }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
 @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
@@ -56,7 +55,7 @@ header.top p { margin: 0; font: italic 400 19px/1.2 var(--f-ipa); color: var(--m
 .view-tabs { position: absolute; top: 12px; left: 12px; z-index: 3; display: flex; gap: 2px; padding: 3px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
 .view-tabs button { font: 500 13px/1 var(--f-body); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 7px 12px; cursor: pointer; }
 .view-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
-.view-tabs button:focus-visible, .chip:focus-visible, .btn:focus-visible, .toggles label:focus-within { outline: 2px solid var(--air); outline-offset: 2px; }
+.view-tabs button:focus-visible, .snd:focus-visible, .tabs2 button:focus-visible, .btn:focus-visible, .toggles label:focus-within { outline: 2px solid var(--air); outline-offset: 2px; }
 .viewer-foot { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; justify-content: space-between; pointer-events: none; }
 .viewer-foot > * { pointer-events: auto; }
 @media (max-width: 900px) { .viewer-foot { position: static; padding: 10px; border-top: 1px solid var(--line); background: var(--surface); border-radius: 0 0 var(--r) var(--r); } .viewer-foot .cor, .viewer-foot .toggles { border: 0; padding: 0; max-width: none; } }
@@ -82,10 +81,36 @@ header.top p { margin: 0; font: italic 400 19px/1.2 var(--f-ipa); color: var(--m
 .panel { display: grid; gap: 14px; min-width: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 12px; min-width: 0; }
 .eyebrow { margin: 0; font: 500 11px/1 var(--f-mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
-.sounds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.chip { display: grid; place-items: center; background: var(--sunk); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 4px 0 8px; cursor: pointer; font: 400 46px/1.1 var(--f-ipa); }
-.chip:hover { border-color: var(--air); }
-.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+/* Inventario: cuadro AFI de consonantes (punto × modo) y trapecio vocálico */
+.snd-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tabs2 { display: flex; gap: 2px; padding: 2px; background: var(--sunk); border-radius: 999px; }
+.tabs2 button { font: 500 12px/1 var(--f-body); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 6px 10px; cursor: pointer; }
+.tabs2 button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+table.ipa-tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ipa-tbl col.mh { width: 74px; }
+.ipa-tbl thead th { padding: 0 0 4px; font: 500 10px/1 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); text-align: center; }
+.ipa-tbl abbr { text-decoration: none; cursor: help; }
+.ipa-tbl tbody th { padding: 0 4px 0 0; font: 500 11px/1.1 var(--f-body); color: var(--muted); text-align: left; }
+.ipa-tbl td { border: 1px solid var(--line); padding: 2px; height: 30px; }
+.ipa-tbl .cell { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.snd { min-width: 0; height: 24px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: transparent; font: 400 16px/1 var(--f-ipa); color: color-mix(in srgb, var(--muted) 72%, transparent); cursor: default; }
+.snd.dg { font-size: 13px; letter-spacing: -0.03em; }
+.snd.al { border-style: dashed; border-color: color-mix(in srgb, var(--line) 80%, transparent); }
+.snd.on { background: var(--sunk); border-color: var(--muted); color: var(--ink); cursor: pointer; }
+.snd.on:hover { border-color: var(--air); }
+.snd[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.ipa-vow { position: relative; height: 186px; }
+.ipa-vow .plot { position: absolute; left: 46px; right: 20px; top: 34px; bottom: 16px; }
+.ipa-vow svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ipa-vow svg path { fill: none; stroke: var(--line); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.ipa-vow .snd { position: absolute; width: 30px; height: 26px; transform: translate(-50%, -50%); background: var(--surface); font-size: 18px; }
+.ipa-vow .snd.on { background: var(--sunk); }
+.ipa-vow .snd[aria-pressed="true"] { background: var(--ink); }
+.ipa-vow .lab { position: absolute; font: 500 10px/1 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); transform: translate(-50%, -50%); white-space: nowrap; }
+.legend2 { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+.legend2 span { display: inline-flex; align-items: center; gap: 5px; }
+.legend2 .snd { width: 22px; height: 20px; font-size: 14px; display: inline-grid; place-items: center; pointer-events: none; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .scrub { display: grid; gap: 6px; }
 .scrub .ends { display: flex; justify-content: space-between; font: 500 12px/1 var(--f-body); color: var(--muted); }
 .scrub input { width: 100%; accent-color: var(--air); }
@@ -118,7 +143,6 @@ footer p { margin: 0; }
 <div class="app">
   <header class="top">
     <h1>Articulario</h1>
-    <p>la lengua por dentro</p>
   </header>
 
   <main class="layout">
@@ -147,11 +171,16 @@ footer p { margin: 0; }
 
     <aside class="panel">
       <div class="card">
-        <p class="eyebrow">Sonido</p>
-        <div class="sounds" role="group" aria-label="Sonido">
-          <button type="button" class="chip" id="btnS" data-sound="s" aria-pressed="true" aria-label="[s] fricativa alveolar sorda">s</button>
-          <button type="button" class="chip" id="btnL" data-sound="l" aria-pressed="false" aria-label="[l] lateral alveolar sonora">l</button>
+        <div class="snd-head">
+          <p class="eyebrow">Sonido</p>
+          <div class="tabs2" role="group" aria-label="Tipo de sonido">
+            <button type="button" id="tabC" aria-pressed="true">Consonantes</button>
+            <button type="button" id="tabV" aria-pressed="false">Vocales</button>
+          </div>
         </div>
+        <table class="ipa-tbl" id="tblC" aria-label="Consonantes del español por punto y modo de articulación"></table>
+        <div class="ipa-vow" id="tblV" role="group" aria-label="Vocales del español" hidden></div>
+        <div class="legend2" aria-hidden="true"><span><i class="snd on">s</i>disponible</span><span><i class="snd al">ŋ</i>alófono</span><span><i class="snd">p</i>próximamente</span></div>
         <div class="scrub">
           <div class="ends"><span>Reposo</span><span id="kR" class="ipa">[s]</span></div>
           <input type="range" id="k" min="0" max="1" step="0.01" value="1" aria-label="Transición desde la posición de reposo">
@@ -513,6 +542,13 @@ const POSTURES = {
     r: [0, -0.2, -0.6, -0.85, -0.8, -0.6, -0.35, -0.2, -0.1, 0],
     w: [0, 0.7, 1.05, 1.3, 1.5, 1.7, 1.75, 1.55, 1.3, 0.95],
     g0: 0.15, g1: 0.8, bk0: 0.1, bk1: 0.4, jaw: 6, velum: 1, abd: 0.05, voice: 1, yU: 0.26, yL: -0.4, spread: 1.0
+  },
+  // [m]: labios cerrados, velo bajado; la lengua queda libre, en posición neutra
+  m: {
+    mid: [[1.1, -0.25], [1.25, 0.15], [1.6, 0.42], [2.1, 0.7], [2.8, 0.95], [3.6, 1.1], [4.4, 1.1], [5.15, 0.9], [5.75, 0.45], [6.15, -0.2], [6.32, -1.0], [6.3, -2.2], [5.95, -3.5]],
+    r: [0, -0.1, -0.25, -0.35, -0.4, -0.4, -0.35, -0.2, -0.1, 0],
+    w: [0, 0.85, 1.35, 1.65, 1.85, 1.92, 1.85, 1.6, 1.3, 0.95],
+    g0: 0.15, g1: 0.8, bk0: 0.0, bk1: 0.16, jaw: 2.0, velum: 0, abd: 0.05, voice: 1, yU: 0.02, yL: 0.08, spread: 1.0
   }
 };
 function mixPosture(a, b, k) {
@@ -1020,6 +1056,15 @@ function computeFlow(key) {
     };
     flowPaths = [pathFor(-1), pathFor(1)];
     flowKind = 'lateral';
+  } else if (key === 'm') {
+    // nasal: el aire sube por detrás del velo bajado y sale por las fosas nasales
+    const pathFor = sd => {
+      const pts = [[6.2, -6.6], [6.25, -5.1], [6.95, -3.7], [7.05, -2.1], [7.15, -0.4], [7.42, 0.9], [7.42, 2.1]].map(p => V(p[0], p[1], 0));
+      for (const [x, y, z] of [[7.0, 3.15, 0.15], [6.1, 3.45, 0.3], [5.0, 3.55, 0.32], [3.8, 3.6, 0.32], [2.6, 3.55, 0.32], [1.4, 3.35, 0.3], [0.3, 3.1, 0.3], [-0.8, 2.8, 0.3], [-1.6, 2.5, 0.32], [-2.15, 2.3, 0.35], [-2.6, 1.7, 0.4], [-3.0, 0.9, 0.45]]) pts.push(V(x, y, sd * z));
+      return new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    };
+    flowPaths = [pathFor(-1), pathFor(1)];
+    flowKind = 'nasal';
   } else {
     const pts = mkBack(zc);
     pts.push(V(6.15, oralMid(6.15, 0, 1.9), zc));
@@ -1253,16 +1298,94 @@ const DESC = {
     title: '<span class="ipa">[l]</span> lateral alveolar sonora', kR: '[l]',
     list: [['Punto', 'alveolar'], ['Modo', 'lateral'], ['Sonoridad', 'sonora'], ['Velo', 'elevado (oral)']],
     text: 'El ápice de la lengua se apoya en los alvéolos y cierra el paso del aire en la línea media. Los bordes de la lengua descienden y dejan, a uno o a ambos lados, un canal por el que el aire sale sin turbulencia. El dorso se mantiene adelantado, sin elevarse hacia el velo. Las cuerdas vocales vibran durante toda la articulación. En el palatograma solo hay contacto en la zona alveolar central.'
+  },
+  m: {
+    title: '<span class="ipa">[m]</span> nasal bilabial sonora', kR: '[m]',
+    list: [['Punto', 'bilabial'], ['Modo', 'nasal'], ['Sonoridad', 'sonora'], ['Velo', 'descendido (nasal)']],
+    text: 'Los labios se cierran por completo e impiden que el aire salga por la boca. El velo del paladar desciende y abre el paso hacia las fosas nasales, así que el aire sale por la nariz. La lengua no participa en la articulación y queda en una posición neutra, preparada para el sonido siguiente. Las cuerdas vocales vibran durante toda la articulación. En el palatograma no aparece ningún contacto.'
   }
 };
+/* ---------------- Inventario: cuadro AFI ---------------- */
+const PLACES = [['Bil.', 'bilabial'], ['Lbd.', 'labiodental'], ['Den.', 'dental'], ['Alv.', 'alveolar'], ['Pal.', 'palatal'], ['Vel.', 'velar']];
+const MANNERS = ['Oclusiva', 'Nasal', 'Fricativa', 'Africada', 'Aproximante', 'Lateral', 'Vibrante simple', 'Vibrante múltiple'];
+// [modo, punto, sonora, símbolo, nombre, alófono de]
+const CONS = [
+  [0, 0, 0, 'p', 'oclusiva bilabial sorda'], [0, 0, 1, 'b', 'oclusiva bilabial sonora'],
+  [0, 2, 0, 't̪', 'oclusiva dental sorda'], [0, 2, 1, 'd̪', 'oclusiva dental sonora'],
+  [0, 5, 0, 'k', 'oclusiva velar sorda'], [0, 5, 1, 'g', 'oclusiva velar sonora'],
+  [1, 0, 1, 'm', 'nasal bilabial sonora'], [1, 1, 1, 'ɱ', 'nasal labiodental sonora', '/n/ ante /f/'],
+  [1, 2, 1, 'n̪', 'nasal dental sonora', '/n/ ante /t d/'], [1, 3, 1, 'n', 'nasal alveolar sonora'],
+  [1, 4, 1, 'ɲ', 'nasal palatal sonora'], [1, 5, 1, 'ŋ', 'nasal velar sonora', '/n/ ante /k g x/'],
+  [2, 1, 0, 'f', 'fricativa labiodental sorda'], [2, 3, 0, 's', 'fricativa alveolar sorda'],
+  [2, 3, 1, 'z', 'fricativa alveolar sonora', '/s/ ante consonante sonora'], [2, 4, 1, 'ʝ', 'fricativa palatal sonora'],
+  [2, 5, 0, 'x', 'fricativa velar sorda'],
+  [3, 4, 0, 'tʃ', 'africada palatal sorda'], [3, 4, 1, 'ɟʝ', 'africada palatal sonora', '/ʝ/ tras pausa, nasal o lateral'],
+  [4, 0, 1, 'β', 'aproximante bilabial sonora', '/b/'], [4, 2, 1, 'ð', 'aproximante dental sonora', '/d/'],
+  [4, 5, 1, 'ɣ', 'aproximante velar sonora', '/g/'],
+  [5, 2, 1, 'l̪', 'lateral dental sonora', '/l/ ante /t d/'], [5, 3, 1, 'l', 'lateral alveolar sonora'],
+  [6, 3, 1, 'ɾ', 'vibrante simple alveolar sonora'], [7, 3, 1, 'r', 'vibrante múltiple alveolar sonora']
+];
+// [símbolo, nombre, x %, y %, alófono de] sobre el trapecio
+const VOWELS = [
+  ['i', 'vocal anterior alta', 8, 0], ['e', 'vocal anterior media', 30, 50], ['a', 'vocal central baja', 68, 100],
+  ['o', 'vocal posterior media', 100, 50], ['u', 'vocal posterior alta', 100, 0],
+  ['j', 'aproximante palatal', 24, 0, '/i/ en diptongo'], ['w', 'aproximante labiovelar', 84, 0, '/u/ en diptongo']
+];
+const KEY_OF = { s: 's', l: 'l', m: 'm' }; // símbolo → postura disponible en el modelo
+function sndBtn(sym, name, allo) {
+  const b = document.createElement('button'), key = KEY_OF[sym];
+  b.type = 'button';
+  b.className = 'snd' + (allo ? ' al' : '') + (sym === 'tʃ' || sym === 'ɟʝ' ? ' dg' : '');
+  b.textContent = sym;
+  const full = `[${sym}] ${name}` + (allo ? `, alófono de ${allo}` : '');
+  b.setAttribute('aria-label', key ? full : full + ' (próximamente)');
+  b.title = key ? full : full + ' · próximamente';
+  if (key) {
+    b.classList.add('on'); b.dataset.key = key; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => { if (sound !== key) { sound = key; goTarget(); } });
+  } else b.setAttribute('aria-disabled', 'true');
+  return b;
+}
+function buildInventory() {
+  const t = $('tblC');
+  t.innerHTML = '<colgroup><col class="mh">' + PLACES.map(() => '<col>').join('') + '</colgroup><thead><tr><th scope="col"><span class="vh">Modo</span></th>' +
+    PLACES.map(([ab, full]) => `<th scope="col"><abbr title="${full}">${ab}</abbr></th>`).join('') + '</tr></thead><tbody></tbody>';
+  MANNERS.forEach((mn, r) => {
+    const tr = document.createElement('tr'), th = document.createElement('th');
+    th.scope = 'row'; th.textContent = mn; tr.appendChild(th);
+    PLACES.forEach((_, c) => {
+      const td = document.createElement('td'), cell = document.createElement('div');
+      cell.className = 'cell';
+      for (const v of [0, 1]) {
+        const e = CONS.find(x => x[0] === r && x[1] === c && x[2] === v);
+        cell.appendChild(e ? sndBtn(e[3], e[4], e[5]) : document.createElement('span'));
+      }
+      td.appendChild(cell); tr.appendChild(td);
+    });
+    t.tBodies[0].appendChild(tr);
+  });
+  const v = $('tblV');
+  v.innerHTML = '<div class="plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M8 0 L100 0 L100 100 L46 100 Z M27 50 L100 50"/></svg></div>';
+  const plot = v.firstChild;
+  for (const [txt, x, y] of [['anterior', 8, -26], ['central', 54, -26], ['posterior', 94, -26]]) {
+    const l = document.createElement('span'); l.className = 'lab'; l.textContent = txt; l.style.left = x + '%'; l.style.top = y + 'px'; plot.appendChild(l);
+  }
+  for (const [txt, y] of [['alta', 0], ['media', 50], ['baja', 100]]) {
+    const l = document.createElement('span'); l.className = 'lab'; l.textContent = txt; l.style.left = '-28px'; l.style.top = y + '%'; plot.appendChild(l);
+  }
+  for (const [sym, name, x, y, allo] of VOWELS) {
+    const b = sndBtn(sym, name, allo); b.style.left = x + '%'; b.style.top = y + '%'; plot.appendChild(b);
+  }
+}
+buildInventory();
+
 function renderDesc() {
   const d = DESC[targetKey()];
   $('descTitle').innerHTML = d.title;
   $('descList').innerHTML = d.list.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('');
   $('descText').textContent = d.text;
   $('kR').textContent = d.kR;
-  $('btnS').setAttribute('aria-pressed', sound === 's');
-  $('btnL').setAttribute('aria-pressed', sound === 'l');
+  for (const b of document.querySelectorAll('.snd[data-key]')) b.setAttribute('aria-pressed', b.dataset.key === sound);
 }
 
 /* ---------------- Audio sintético ---------------- */
@@ -1300,6 +1423,28 @@ function playL(dur) {
     const gg = a.createGain(); gg.gain.value = gn; osc.connect(bp).connect(gg).connect(sum);
   }
   const notch = a.createBiquadFilter(); notch.type = 'notch'; notch.frequency.value = 2100; notch.Q.value = 2.5;
+  const env = a.createGain();
+  env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(0.75, t0 + 0.07); env.gain.setValueAtTime(0.75, t0 + dur - 0.12); env.gain.linearRampToValueAtTime(0, t0 + dur);
+  sum.connect(notch).connect(env).connect(a.destination);
+  osc.start(t0); vib.start(t0); osc.stop(t0 + dur + 0.05); vib.stop(t0 + dur + 0.05);
+}
+
+function playM(dur) {
+  // murmullo nasal: resonancia grave (~260 Hz) y antirresonancia bilabial (~1000 Hz)
+  const a = ac(); if (!a) return;
+  const t0 = a.currentTime + 0.03, N = 48, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
+  for (let n = 1; n <= N; n++) im[n] = 1 / Math.pow(n, 1.25);
+  const osc = a.createOscillator(); osc.setPeriodicWave(a.createPeriodicWave(re, im));
+  osc.frequency.setValueAtTime(122, t0); osc.frequency.linearRampToValueAtTime(110, t0 + dur);
+  const vib = a.createOscillator(), vg = a.createGain(); vib.frequency.value = 5.3; vg.gain.value = 1.4; vib.connect(vg).connect(osc.frequency);
+  const sum = a.createGain();
+  const low = a.createBiquadFilter(); low.type = 'lowpass'; low.frequency.value = 350; low.Q.value = 0.8;
+  const lg = a.createGain(); lg.gain.value = 0.5; osc.connect(low).connect(lg).connect(sum);
+  for (const [f, q, gn] of [[260, 4, 1.0], [2100, 9, 0.12], [2800, 10, 0.08]]) {
+    const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q;
+    const gg = a.createGain(); gg.gain.value = gn; osc.connect(bp).connect(gg).connect(sum);
+  }
+  const notch = a.createBiquadFilter(); notch.type = 'notch'; notch.frequency.value = 1000; notch.Q.value = 2;
   const env = a.createGain();
   env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(0.75, t0 + 0.07); env.gain.setValueAtTime(0.75, t0 + dur - 0.12); env.gain.linearRampToValueAtTime(0, t0 + dur);
   sum.connect(notch).connect(env).connect(a.destination);
@@ -1366,15 +1511,16 @@ function articulate() {
   $('k').value = 1;
   tweenTo(POSTURES[tk], 480, () => {
     const dur = 0.95;
-    if (tk === 'l') playL(dur); else playS(false, dur);
+    if (tk === 'l') playL(dur); else if (tk === 'm') playM(dur); else playS(false, dur);
     setTimeout(() => { playing = false; }, dur * 1000);
   });
 }
 
 /* ---------------- Eventos ---------------- */
 for (const b of document.querySelectorAll('.view-tabs button')) b.addEventListener('click', () => setView(b.dataset.view));
-$('btnS').addEventListener('click', () => { if (sound !== 's') { sound = 's'; goTarget(); } });
-$('btnL').addEventListener('click', () => { if (sound !== 'l') { sound = 'l'; goTarget(); } });
+for (const [id, show] of [['tabC', 'tblC'], ['tabV', 'tblV']]) $(id).addEventListener('click', () => {
+  for (const [i2, t2] of [['tabC', 'tblC'], ['tabV', 'tblV']]) { $(i2).setAttribute('aria-pressed', i2 === id); $(t2).hidden = t2 !== show; }
+});
 $('k').addEventListener('input', setFromSlider);
 $('play').addEventListener('click', articulate);
 $('tContact').addEventListener('change', () => { paintContacts(); });
