@@ -1,6 +1,6 @@
 # Articulario
 
-*La lengua por dentro.* Prototipo de modelo 3D esquemático del tracto vocal para ver cómo se articulan [s] y [l] en español. Es una página web: HTML + JavaScript con [three.js](https://threejs.org) (licencia MIT, copia incluida en `vendor/`). Python solo se usa para construir y servir la página.
+Prototipo de modelo 3D esquemático del tracto vocal para ver cómo se articulan [s] y [l] en español. Es una página web: HTML + JavaScript con [three.js](https://threejs.org) (licencia MIT, copia incluida en `vendor/`). Python solo se usa para construir y servir la página.
 
 ## Cómo abrirla
 
